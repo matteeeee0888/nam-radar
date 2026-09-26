@@ -143,7 +143,19 @@ def main():
     orfani = 0
     for cartella in ("media", "v"):
         d = os.path.join(SITE, cartella)
-        for nome in os.listdir(d) if os.path.isdir(d) else []:
+        if not os.path.isdir(d):
+            continue
+        # Se il catalogo non referenzia NIENTE di questa cartella, non e' che sono
+        # tutti orfani: e' che qualcosa prima non ha funzionato. Una pulizia cieca qui
+        # ha gia' cancellato 246 video dal sito pubblicato. Meglio non toccare niente
+        # e dirlo.
+        if not any(r.startswith(cartella + "/") for r in servono):
+            n = len(os.listdir(d))
+            if n:
+                print(f"! {cartella}/: il catalogo non ne referenzia nessuno ma sul sito "
+                      f"ce ne sono {n}. Non li tocco: controlla l'ordine dei passi.")
+            continue
+        for nome in os.listdir(d):
             rel = f"{cartella}/{nome}"
             if rel not in servono:
                 os.remove(os.path.join(SITE, rel))

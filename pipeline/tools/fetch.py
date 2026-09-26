@@ -64,6 +64,62 @@ def resolve_one(page, nome, country):
     return {"page_id": pid, "nome_pagina": nm, "ads_viste": n}
 
 
+def raccogli_keyword(parole, paese, per_parola, key, cfg):
+    """
+    Raccolta a partire dalle parole invece che dalle pagine.
+
+    Serve dove i competitor non hanno un marchio da inseguire: un installatore di
+    caldaie, un e-commerce nato sei mesi fa. La lista di pagine li' nasce gia' vecchia;
+    la domanda no. Qui l'inserzionista non lo decidiamo noi, lo trova la ricerca, e il
+    set si rinfresca da solo a ogni giro.
+    """
+    noti = {c["page_id"]: c for c in cfg["competitors"] if c.get("page_id")}
+    righe, visti = [], set()
+    for parola in parole:
+        cursore, presi = None, 0
+        while presi < per_parola:
+            q = (f"search/ads?query={quote(parola)}&country={paese}"
+                 f"&status=ACTIVE&media_type=ALL")
+            if cursore:
+                q += "&cursor=" + quote(cursore)
+            d = None
+            for tentativo in range(3):
+                try:
+                    d = api_get(q, key)
+                    break
+                except Exception:
+                    time.sleep(2 + tentativo * 3)
+            if d is None:
+                break
+            res = d.get("searchResults") or d.get("results") or []
+            nuovi = 0
+            for n in res:
+                aid = str(n.get("ad_archive_id") or "")
+                if not aid or aid in visti:
+                    continue
+                snap = n.get("snapshot") or {}
+                pid = str(n.get("page_id") or snap.get("page_id") or "")
+                nome = snap.get("page_name") or n.get("page_name") or "?"
+                base = noti.get(pid) or {}
+                comp = {"slug": base.get("slug") or slugify(nome),
+                        "nome": base.get("nome") or nome,
+                        "mercato": base.get("mercato") or paese,
+                        "tier": base.get("tier") or "scoperto",
+                        "tipo": base.get("tipo") or (snap.get("page_categories") or ["n.d."])[0]}
+                visti.add(aid)
+                r = normalize(n, comp, paese)
+                r["parola"] = parola
+                righe.append(r)
+                nuovi += 1
+                presi += 1
+            cursore = d.get("cursor")
+            if not nuovi or not cursore:
+                break
+            time.sleep(0.3)
+        print(f"   {parola:36} {presi:>4} inserzioni", flush=True)
+    return righe
+
+
 def raccogli_api(comp, paese, limite, key):
     """
     Raccolta via API invece che via browser.
@@ -105,6 +161,11 @@ def main():
     ap.add_argument("--limit", type=int, default=150, help="max inserzioni per competitor")
     ap.add_argument("--country", default=None, help="forza il paese della query (default: dal mercato)")
     ap.add_argument("--headful", action="store_true")
+    ap.add_argument("--keyword", action="store_true",
+                    help="raccogli per parola chiave (keywords.txt) invece che per pagina: "
+                         "per chi ha competitor senza un marchio da inseguire")
+    ap.add_argument("--per-parola", type=int, default=120,
+                    help="quante inserzioni al massimo per parola chiave")
     ap.add_argument("--api", action="store_true",
                     help="raccogli via ScrapeCreators invece che col browser: obbligatorio "
                          "in cloud, e prende tutte le inserzioni invece delle prime 30")
@@ -129,6 +190,46 @@ def main():
 
     os.makedirs(RAW, exist_ok=True)
     stamp = date.today().isoformat()
+
+    if a.keyword:
+        key = load_key()
+        if not key:
+            sys.exit("--keyword ha bisogno di SCRAPECREATORS_API_KEY")
+        fp_kw = os.path.join(os.path.dirname(RAW), "..", "keywords.txt")
+        fp_kw = os.path.normpath(fp_kw)
+        if not os.path.exists(fp_kw):
+            sys.exit(f"manca {fp_kw}: una parola chiave per riga")
+        parole = [l.strip() for l in open(fp_kw) if l.strip() and not l.startswith("#")]
+        paesi = (cfg.get("cliente") or {}).get("paesi") or ["IT"]
+        for paese in paesi:
+            print(f"\n>> parole chiave [{paese}]", flush=True)
+            righe = raccogli_keyword(parole, paese, a.per_parola, key, cfg)
+            if not righe:
+                continue
+            suff = f"-{paese.lower()}" if len(paesi) > 1 else ""
+            fp = os.path.join(RAW, f"_kw{suff}-{stamp}.jsonl")
+            with open(fp, "w") as f:
+                for r in righe:
+                    f.write(json.dumps(r, ensure_ascii=False) + "\n")
+            print(f"   -> {len(righe)} inserzioni da "
+                  f"{len({r['competitor'] for r in righe})} inserzionisti", flush=True)
+        # il cliente si raccoglie comunque per pagina: e' l'unico metro che conta
+        cli = cfg.get("cliente") or {}
+        if cli.get("page_id"):
+            comp = {"slug": "_cliente", "nome": cli.get("brand", "noi"),
+                    "mercato": (cli.get("paesi") or ["IT"])[0], "tier": "cliente",
+                    "tipo": "cliente", "page_id": cli["page_id"]}
+            for paese in paesi:
+                rows, total = raccogli_api(comp, paese, a.limit, key)
+                for r in rows:
+                    r["ads_attive_brand"] = total
+                if rows:
+                    suff = f"-{paese.lower()}" if len(paesi) > 1 else ""
+                    with open(os.path.join(RAW, f"_cliente{suff}-{stamp}.jsonl"), "w") as f:
+                        for r in rows:
+                            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+                    print(f">> {comp['nome']} [{paese}]: {len(rows)} inserzioni", flush=True)
+        return costruisci_catalogo(a.finestra)
 
     if a.api:
         key = load_key()
@@ -258,6 +359,9 @@ def costruisci_catalogo(finestra_giorni=60):
         slug, giorno = m.group(1), m.group(2)
         # con piu' paesi il file e' <slug>-<paese>: il permesso si controlla sullo slug base
         base = slug.rsplit("-", 1)[0] if slug.rsplit("-", 1)[0] in ammessi else slug
+        if slug.startswith("_kw"):
+            base = "_kw"                      # raccolta per parola: nessuna lista da rispettare
+            ammessi.add("_kw")
         if base not in ammessi:
             esclusi.add(slug)
             continue

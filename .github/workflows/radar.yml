@@ -45,11 +45,16 @@ jobs:
         # tetto di spesa: la cache fa pagare solo le inserzioni mai viste prima
         run: python tools/enrich_reach.py --max 1500
 
-      - name: Immagini e video nuovi
+      # I video PRIMA del build: build.py registra nel payload solo i video che trova
+      # gia' sul disco. Invertendo l'ordine il payload esce senza video e la pulizia
+      # del sito li cancella tutti. E' successo il 26/09/2026.
+      - name: Video nuovi
         working-directory: pipeline
-        run: |
-          python tools/build.py --media --media-max 8000
-          python tools/fetch_videos.py --salta-se-in "$RADAR_SITE/v" --max 200
+        run: python tools/fetch_videos.py --salta-se-in "$RADAR_SITE/v" --max 200
+
+      - name: Immagini e pagina
+        working-directory: pipeline
+        run: python tools/build.py --media --media-max 8000
 
       - name: Costruisci il sito
         working-directory: pipeline
