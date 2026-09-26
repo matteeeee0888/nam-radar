@@ -1,0 +1,76 @@
+name: Radar settimanale
+
+# La dashboard si aggiorna da sola il lunedi' mattina. Gira in cloud e non sul Mac di
+# nessuno: launchd vuole la macchina sveglia e i permessi giusti, ed e' la ragione per
+# cui il weekly di OFFER-LAB si e' fermato senza che nessuno se ne accorgesse.
+on:
+  schedule:
+    - cron: "0 5 * * 1"        # lunedi' 05:00 UTC = 07:00 in Italia
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: radar
+  cancel-in-progress: false
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      SCRAPECREATORS_API_KEY: ${{ secrets.SCRAPECREATORS_API_KEY }}
+      RADAR_SITE: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dipendenze
+        run: |
+          python -m pip install --upgrade pip --quiet
+          pip install --quiet pillow
+          which ffmpeg || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+          ffmpeg -version | head -1
+
+      - name: Raccolta dalla Ad Library
+        working-directory: pipeline
+        run: python tools/fetch.py --api --limit 300
+
+      - name: Reach UE dichiarata da Meta
+        working-directory: pipeline
+        # tetto di spesa: la cache fa pagare solo le inserzioni mai viste prima
+        run: python tools/enrich_reach.py --max 1500
+
+      - name: Immagini e video nuovi
+        working-directory: pipeline
+        run: |
+          python tools/build.py --media --media-max 8000
+          python tools/fetch_videos.py --salta-se-in "$RADAR_SITE/v" --max 200
+
+      - name: Costruisci il sito
+        working-directory: pipeline
+        run: python tools/build_site.py
+
+      - name: Pubblica
+        run: |
+          git config user.name  "Radar NAM"
+          git config user.email "abbonamenti@namstudio.it"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "niente di nuovo questa settimana" >> "$GITHUB_STEP_SUMMARY"
+          else
+            git commit -q -m "Radar: raccolta del $(date +%d/%m/%Y)"
+            git push
+            python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          r = [json.loads(l) for l in open("pipeline/data/catalog.jsonl")]
+          print(f"### Radar aggiornato\n")
+          print(f"- {len(r)} inserzioni in catalogo")
+          print(f"- {sum(1 for x in r if x.get('attiva_ora'))} ancora in aria")
+          print(f"- {len({x['competitor'] for x in r})} inserzionisti")
+          PY
+          fi

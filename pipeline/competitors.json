@@ -1,0 +1,348 @@
+{
+  "_nota": "Il set dei competitor. Questo file si edita a mano: e' la parte che decide se la dashboard ha senso o no. page_id null = da risolvere (tools/resolve_pages.py). Metti attivo:false per escludere qualcuno: sparisce dalla dashboard ma lo storico in data/raw/ resta. Al 25/09/2026 il radar e' solo mercato italiano: i riferimenti esteri sono spenti perche' portavano pochissime inserzioni utili.",
+  "cliente": {
+    "brand": "TAG",
+    "gruppo": "Talent Garden",
+    "page_id": "884674988236181",
+    "page_id_alt": [
+      "107043211550527"
+    ],
+    "mercato": "IT",
+    "nota": "Le ads girano sulla pagina Talent Garden Italy; Talent Garden Innovation School (107043211550527) risulta senza inserzioni attive al 24/09/2026. Da confermare con Pasquale su quale pagina esce Talent Academy.",
+    "nome_esteso": "Talent Academy (Talent Garden)"
+  },
+  "competitors": [
+    {
+      "slug": "sole24ore-bs",
+      "nome": "Sole 24 Ore Business School",
+      "page_id": "217876571567661",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "business-school",
+      "attivo": true,
+      "nota": "Executive/Professional Master, gruppo Digit'Ed. Lead form nativa Meta."
+    },
+    {
+      "slug": "luiss-bs",
+      "nome": "Luiss Business School",
+      "page_id": "152306674798769",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "business-school",
+      "attivo": true,
+      "nota": "Master post-laurea e executive, brand accademico forte."
+    },
+    {
+      "slug": "bologna-bs",
+      "nome": "Bologna Business School",
+      "page_id": "32776988074",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "business-school",
+      "attivo": true,
+      "nota": "Master full-time e part-time, Alma Mater."
+    },
+    {
+      "slug": "rome-bs",
+      "nome": "Rome Business School",
+      "page_id": "162818990448453",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "business-school",
+      "attivo": true,
+      "nota": "Master online/blended, spender aggressivo e multi-paese."
+    },
+    {
+      "slug": "alma-laboris",
+      "nome": "Alma Laboris Business School",
+      "page_id": "548952031839938",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "business-school",
+      "attivo": true,
+      "nota": "Master HR e placement, direct response puro."
+    },
+    {
+      "slug": "start2impact",
+      "nome": "start2impact",
+      "page_id": "193653594471357",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "academy-digitale",
+      "attivo": true,
+      "nota": "Academy online digital/coding, target giovane, forte su social."
+    },
+    {
+      "slug": "epicode",
+      "nome": "Epicode",
+      "page_id": "101760941759223",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "academy-digitale",
+      "attivo": true,
+      "nota": "Bootcamp coding con garanzia lavoro."
+    },
+    {
+      "slug": "polimi-gsom",
+      "nome": "POLIMI Graduate School of Management",
+      "page_id": "448980525194494",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "business-school",
+      "attivo": true,
+      "nota": ""
+    },
+    {
+      "slug": "meliusform",
+      "nome": "MELIUSform Business School",
+      "page_id": null,
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "business-school",
+      "attivo": true,
+      "nota": ""
+    },
+    {
+      "slug": "sida-group",
+      "nome": "Sida Group",
+      "page_id": null,
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "business-school",
+      "attivo": true,
+      "nota": ""
+    },
+    {
+      "slug": "boolean",
+      "nome": "Boolean",
+      "page_id": "1491446877601525",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "academy-digitale",
+      "attivo": true,
+      "nota": ""
+    },
+    {
+      "slug": "aulab",
+      "nome": "Aulab",
+      "page_id": "144752702361625",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "academy-digitale",
+      "attivo": true,
+      "nota": ""
+    },
+    {
+      "slug": "digital-coach",
+      "nome": "Digital Coach",
+      "page_id": "1196138020254575",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "academy-digitale",
+      "attivo": true,
+      "nota": ""
+    },
+    {
+      "slug": "ninja-academy",
+      "nome": "Ninja Academy",
+      "page_id": null,
+      "mercato": "IT",
+      "tier": "adiacente",
+      "tipo": "academy-digitale",
+      "attivo": true,
+      "nota": "Formazione marketing, Ninja Marketing."
+    },
+    {
+      "slug": "24ore-professional",
+      "nome": "24ORE Professional",
+      "page_id": null,
+      "mercato": "IT",
+      "tier": "adiacente",
+      "tipo": "business-school",
+      "attivo": false,
+      "nota": ""
+    },
+    {
+      "slug": "ironhack",
+      "nome": "Ironhack",
+      "page_id": "484921588260258",
+      "mercato": "EU",
+      "tier": "riferimento",
+      "tipo": "academy-digitale",
+      "attivo": false,
+      "nota": "Bootcamp tech ES/EU, benchmark creativo."
+    },
+    {
+      "slug": "le-wagon",
+      "nome": "Le Wagon",
+      "page_id": null,
+      "mercato": "EU",
+      "tier": "riferimento",
+      "tipo": "academy-digitale",
+      "attivo": false,
+      "nota": "Il resolver aveva agganciato un omonimo (Restaurant Le Wagon): page_id da mettere a mano dalla Ad Library."
+    },
+    {
+      "slug": "general-assembly",
+      "nome": "General Assembly",
+      "page_id": null,
+      "mercato": "US",
+      "tier": "riferimento",
+      "tipo": "academy-digitale",
+      "attivo": false,
+      "nota": "Il resolver trova solo la pagina regionale General Assembly Middle East: se serve il benchmark USA, page_id a mano."
+    },
+    {
+      "slug": "ie-business-school",
+      "nome": "IE Business School",
+      "page_id": "198824583484913",
+      "mercato": "EU",
+      "tier": "riferimento",
+      "tipo": "business-school",
+      "attivo": false,
+      "nota": "Spender grosso su master online."
+    },
+    {
+      "slug": "hyper-island",
+      "nome": "Hyper Island",
+      "page_id": null,
+      "mercato": "EU",
+      "tier": "riferimento",
+      "tipo": "academy-digitale",
+      "attivo": false,
+      "nota": ""
+    },
+    {
+      "slug": "rcs-academy",
+      "nome": "RCS Academy",
+      "page_id": "537360413449161",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "business-school",
+      "attivo": true,
+      "nota": "Master RCS su business, comunicazione e management. Segnalato dal cliente, 30+ inserzioni attive."
+    },
+    {
+      "slug": "h-farm",
+      "nome": "H-FARM College",
+      "page_id": "1207364022610924",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "academy-digitale",
+      "attivo": true,
+      "nota": "Formazione digitale e innovazione. Segnalato dal cliente, 30+ inserzioni attive."
+    },
+    {
+      "slug": "altis-cattolica",
+      "nome": "ALTIS Universita Cattolica",
+      "page_id": "1118261151553370",
+      "mercato": "IT",
+      "tier": "diretto",
+      "tipo": "business-school",
+      "attivo": true,
+      "nota": "Master management e sostenibilita'. Solo 2 inserzioni attive: entra ma pesa poco."
+    },
+    {
+      "slug": "pegaso",
+      "nome": "Universita telematica Pegaso",
+      "page_id": "270544306299696",
+      "mercato": "IT",
+      "tier": "adiacente",
+      "tipo": "universita-online",
+      "attivo": true,
+      "nota": "Non vende master come i nostri, ma parla allo stesso avatar: chi studia mentre lavora. 30+ attive, spender grosso."
+    },
+    {
+      "slug": "ecampus",
+      "nome": "Universita eCampus",
+      "page_id": "152381341459117",
+      "mercato": "IT",
+      "tier": "adiacente",
+      "tipo": "universita-online",
+      "attivo": true,
+      "nota": "Come Pegaso: stesso avatar, stesse obiezioni, volumi alti."
+    },
+    {
+      "slug": "ied",
+      "nome": "IED Istituto Europeo di Design",
+      "page_id": "87614382847",
+      "mercato": "IT",
+      "tier": "adiacente",
+      "tipo": "scuola-creativa",
+      "attivo": true,
+      "nota": "Verticale diverso (design), stessa decisione d'acquisto. Segnalato dal cliente."
+    },
+    {
+      "slug": "naba",
+      "nome": "NABA",
+      "page_id": "131366200210893",
+      "mercato": "IT",
+      "tier": "adiacente",
+      "tipo": "scuola-creativa",
+      "attivo": true,
+      "nota": "Arti e design. Segnalato dal cliente, 23 inserzioni attive."
+    },
+    {
+      "slug": "scuola-holden",
+      "nome": "Scuola Holden",
+      "page_id": "17346787661",
+      "mercato": "IT",
+      "tier": "adiacente",
+      "tipo": "scuola-creativa",
+      "attivo": true,
+      "nota": "Scrittura. Creativita' molto riconoscibile, utile come riferimento di tono."
+    },
+    {
+      "slug": "accademia-del-lusso",
+      "nome": "Accademia del Lusso",
+      "page_id": "112046335505016",
+      "mercato": "IT",
+      "tier": "adiacente",
+      "tipo": "scuola-creativa",
+      "attivo": true,
+      "nota": "Moda e lusso. Segnalato dal cliente, 14 inserzioni attive."
+    }
+  ],
+  "_scartati_dal_controllo_25_09_2026": {
+    "perche": "Segnalati dal cliente ma senza inserzioni attive in Italia sulla Meta Ad Library al 25/09/2026. Non sono competitor su questo canale: vendono via sales o non fanno adv a pubblico.",
+    "consulenza_e_formazione_aziendale": [
+      "The European House-Ambrosetti",
+      "Methodos",
+      "Newton",
+      "MIDA",
+      "Open Knowledge",
+      "Smartive",
+      "Partners4Innovation / Digital360",
+      "Osservatori Digital Innovation"
+    ],
+    "academy_aziendali": [
+      "Reply Digital Academy (nessuna pagina)",
+      "Fastweb Digital Academy (1 inserzione)",
+      "Academy Techint",
+      "Academy Zucchetti"
+    ],
+    "piattaforme_mooc": [
+      "edX",
+      "FutureLearn"
+    ],
+    "piccoli_o_fermi": [
+      "Epic Education",
+      "R5 Labs",
+      "Tree School",
+      "Build It Academy",
+      "Bigrock",
+      "Edgemony",
+      "Marketers",
+      "Radical HR",
+      "Le Wagon",
+      "School-Led NPQ Network (UK)"
+    ],
+    "gia_presenti": [
+      "Boolean (come Boolean.careers)",
+      "Epicode",
+      "Luiss Business School",
+      "start2impact",
+      "24ORE Business School (come Sole 24 Ore Business School; Digit'Ed ne e' la capogruppo)"
+    ]
+  }
+}
