@@ -22,6 +22,8 @@ jobs:
     env:
       SCRAPECREATORS_API_KEY: ${{ secrets.SCRAPECREATORS_API_KEY }}
       RADAR_SITE: ${{ github.workspace }}
+      TAG_META_TOKEN: ${{ secrets.TAG_META_TOKEN }}
+      TAG_ADS_PASSWORD: ${{ secrets.TAG_ADS_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -60,11 +62,40 @@ jobs:
         working-directory: pipeline
         run: python tools/build_site.py
 
+      # Passo a parte: se il token manca o Meta non risponde, il radar si pubblica
+      # lo stesso. Nel repo resta solo ads/index.html cifrato.
+      - name: Top ads TAG
+        working-directory: pipeline
+        timeout-minutes: 45
+        continue-on-error: true
+        run: |
+          if [ -z "$TAG_META_TOKEN" ] || [ -z "$TAG_ADS_PASSWORD" ]; then
+            echo "Mancano TAG_META_TOKEN o TAG_ADS_PASSWORD: le ads non si aggiornano." >> "$GITHUB_STEP_SUMMARY"
+            echo "mancano i secret delle ads" >&2
+            exit 1
+          fi
+          python -m pip install --quiet 'cryptography>=42'
+          python tools/tag_ads.py && python tools/protect.py ads
+
       - name: Pubblica
         run: |
           git config user.name  "Radar NAM"
           git config user.email "abbonamenti@namstudio.it"
+          rm -f ads/data.json ads/data.js ads/.data.json.partial ads/.index.html.tmp
+          if [ -f ads/index.html ] && grep -q 'window.TAG_DATA' ads/index.html; then
+            echo "ads/index.html è in chiaro, lo tolgo e non lo pubblico" >&2
+            git checkout -- ads/index.html 2>/dev/null || rm -f ads/index.html
+            if [ -f ads/index.html ] && grep -q 'window.TAG_DATA' ads/index.html; then
+              echo "non sono riuscito a togliere la pagina in chiaro" >&2
+              exit 1
+            fi
+            echo "- Top ads non pubblicate: la pagina era in chiaro" >> "$GITHUB_STEP_SUMMARY"
+          fi
           git add -A
+          if git diff --staged --name-only | grep -Eq '^(ads/data\.json|ads/data\.js|ads/\.data\.json\.partial|ads/\.index\.html\.tmp)$'; then
+            echo "rifiuto il commit: dati ads in chiaro" >&2
+            exit 1
+          fi
           if git diff --staged --quiet; then
             echo "niente di nuovo questa settimana" >> "$GITHUB_STEP_SUMMARY"
           else
