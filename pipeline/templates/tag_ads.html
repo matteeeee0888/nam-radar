@@ -1,0 +1,117 @@
+<!doctype html>
+<!-- Sorgente di /ads/. protect.py sostituisce data.js con i dati e cifra l'intera pagina. -->
+<html lang="it"><head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Top Ads TAG</title>
+<style>
+:root{--bg:#f6f6f4;--card:#fff;--ink:#15150f;--muted:#6b6b60;--line:#e3e3dc;--accent:#1a5f4a;--accent-soft:#e6f0ec;--radius:12px}
+@media (prefers-color-scheme:dark){:root{--bg:#12120f;--card:#1b1b17;--ink:#f0efe8;--muted:#9a9a8d;--line:#2c2c25;--accent:#5fbfa0;--accent-soft:#17302a}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1360px;padding:28px 24px 72px;margin-left:230px}
+.side{position:fixed;top:0;left:0;bottom:0;width:230px;background:var(--card);border-right:1px solid var(--line);padding:24px 14px}
+.side .br{font-weight:650;font-size:15px;margin:0 8px 18px}
+.side button{display:block;width:100%;text-align:left;border:0;background:transparent;color:var(--ink);font:inherit;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:4px}
+.side button small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+.side button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.side button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.rd{position:fixed;top:0;left:230px;right:0;bottom:0}.rd iframe{width:100%;height:100%;border:0}
+@media (max-width:800px){
+ body{display:flex;flex-direction:column;min-height:100vh}
+ .side{position:static;width:auto;border-right:0;border-bottom:1px solid var(--line)}
+ .wrap{margin-left:0;padding:18px 12px 48px}
+ .rd{position:relative;left:auto;top:auto;right:auto;bottom:auto;flex:1;height:auto;min-height:70vh}
+ .rd iframe{min-height:70vh}
+}
+h1{font-size:25px;margin:0;letter-spacing:-.02em}h2{font-size:17px;margin:28px 0 10px}
+.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:10px;margin:22px 0}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px}
+.tile .n{font-size:24px;font-weight:650;letter-spacing:-.02em}.tile .l{color:var(--muted);font-size:12px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
+.lab{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);width:80px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;cursor:pointer}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+select,input{font:inherit;padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+.tw{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:var(--radius)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);cursor:pointer;white-space:nowrap;user-select:none;position:sticky;top:0;background:var(--card)}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+th.s::after{content:" ↓"}th.s.asc::after{content:" ↑"}
+td.nm{max-width:420px}.nm b{display:block;font-weight:550;word-break:break-word}.nm span{color:var(--muted);font-size:12px}
+.th{width:56px;height:56px;border-radius:8px;object-fit:cover;background:var(--line);display:block}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px}
+a{color:var(--accent)}
+</style></head><body><nav class="side"><div class="br">Top Ads TAG</div><button data-s="radar">Radar mercato<small>Ads del mercato dalla Ad Library</small></button><button data-s="tag">Creatività TAG<small id="cn-tag"></small></button></nav>
+<div id="radar" class="rd" hidden><iframe id="rf" title="Radar mercato"></iframe></div><div class="wrap" id="tagsec">
+<h1>Creatività TAG</h1><div class="sub">Tutte le ads lanciate da TAG nell’account Meta act_1943610831146, comprese quelle consigliate da NAM.</div>
+<div class="sub" id="periodo"></div>
+<div class="tiles" id="tiles"></div>
+<div class="panel">
+ <div class="row"><span class="lab">Periodo</span><span id="win"></span></div>
+ <div class="row"><span class="lab">Filtri</span>
+  <select id="fc"><option value="">Tutti i corsi</option></select>
+  <select id="ff"><option value="">Tutti i formati</option></select>
+  <input id="q" placeholder="Cerca nel nome" size="22">
+  <label class="sub"><input type="number" id="minsp" value="100" min="0" step="50" style="width:80px"> € di spesa minima</label>
+ </div>
+</div>
+<h2>Classifica ads</h2>
+<div class="tw"><table id="ta"><thead></thead><tbody></tbody></table></div>
+<div class="sub" id="na"></div>
+<h2>Riepilogo per corso</h2>
+<div class="tw"><table id="tc"><thead></thead><tbody></tbody></table></div>
+<p class="sub">Lead = azione "lead" di Meta (moduli nativi e pixel). CPL = spesa / lead. CTR = clic sul link / impression. Corso dalle lettere 3-4 del codice ITxxYY; lead magnet, eventi e nomi fuori schema sono in "Non-corso".</p>
+</div>
+<script src="data.js"></script>
+<script>
+const W={'30':'Ultimi 30 giorni','90':'Ultimi 3 mesi','180':'Ultimi 6 mesi'};
+const RADAR_URL=location.protocol==='file:'?'https://tag.namstudio.it/':'/';const SEC={radar:'Radar mercato',tag:'Creatività TAG'};
+let D=window.TAG_DATA,st={s:(location.hash.slice(1) in SEC)?location.hash.slice(1):'tag',w:'90',c:'',f:'',q:'',min:100,sa:'spend',da:-1,sc:'spend',dc:-1};
+const eur=v=>v==null||!isFinite(v)?'–':v.toLocaleString('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:v<100?2:0});
+const n0=v=>v.toLocaleString('it-IT');const pc=v=>isFinite(v)?(v).toLocaleString('it-IT',{maximumFractionDigits:2})+'%':'–';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function enrich(a){a.cpl=a.lead?a.spend/a.lead:Infinity;a.ctr=a.impr?a.link/a.impr*100:0;return a}
+function init(){
+ document.getElementById('win').innerHTML=Object.entries(W).map(([k,l])=>`<button class="chip" data-w="${k}">${l}</button>`).join(' ');
+ document.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{st.w=b.dataset.w;render()});
+ const all=Object.values(D.windows).flatMap(w=>w.ads);
+ const cs=[...new Set(all.map(a=>a.course))].sort((a,b)=>a==='Non-corso'?1:b==='Non-corso'?-1:a.localeCompare(b));
+ fc.innerHTML+=cs.map(c=>`<option>${esc(c)}</option>`).join('');
+ ff.innerHTML+=['Video','Static','Carosello','Altro'].map(c=>`<option>${c}</option>`).join('');
+ fc.onchange=()=>{st.c=fc.value;render()};ff.onchange=()=>{st.f=ff.value;render()};
+ q.oninput=()=>{st.q=q.value.toLowerCase();render()};minsp.oninput=()=>{st.min=+minsp.value||0;render()};
+ document.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{st.s=b.dataset.s;location.hash=st.s;render()});
+ render()}
+function sortBy(r,k,d){return r.sort((a,b)=>{let x=a[k],y=b[k];if(typeof x==='string')return d*x.localeCompare(y);return d*((x===Infinity?1e12:x)-(y===Infinity?1e12:y))})}
+function head(t,cols,k,d,cb){t.tHead.innerHTML='<tr>'+cols.map(c=>`<th class="${c[2]||''} ${c[0]===k?'s'+(d>0?' asc':''):''}" data-k="${c[0]}">${c[1]}</th>`).join('')+'</tr>';
+ t.tHead.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>cb(th.dataset.k))}
+function render(){
+ document.querySelectorAll('[data-w]').forEach(b=>b.classList.toggle('on',b.dataset.w===st.w));
+ document.querySelectorAll('[data-s]').forEach(b=>b.classList.toggle('on',b.dataset.s===st.s));
+ const w=D.windows[st.w],ads=w.ads.map(a=>enrich({...a}));
+ document.getElementById('cn-tag').textContent=`${ads.length} ads, ${W[st.w].toLowerCase()}`;
+ radar.hidden=st.s!=='radar';tagsec.hidden=st.s==='radar';if(st.s==='radar'&&!rf.src)rf.src=RADAR_URL;
+ periodo.textContent=`${W[st.w]}: dal ${fmtD(w.since)} al ${fmtD(D.until)} · dati aggiornati il ${fmtD(D.generated.slice(0,10))}`;
+ const fil=ads.filter(a=>(!st.c||a.course===st.c)&&(!st.f||a.fmt===st.f)&&(!st.q||(a.ad+' '+a.camp).toLowerCase().includes(st.q)));
+ const S=fil.reduce((s,a)=>(s.sp+=a.spend,s.l+=a.lead,s.i+=a.impr,s.k+=a.link,s),{sp:0,l:0,i:0,k:0});
+ tiles.innerHTML=[[eur(S.sp),'Spesa'],[n0(S.l),'Lead'],[eur(S.l?S.sp/S.l:NaN),'CPL medio'],[pc(S.i?S.k/S.i*100:NaN),'CTR'],[n0(fil.length),'Ads con spesa']].map(t=>`<div class="tile"><div class="n">${t[0]}</div><div class="l">${t[1]}</div></div>`).join('');
+ const rows=sortBy(fil.filter(a=>a.spend>=st.min),st.sa,st.da);
+ head(ta,[['#','',''],['th','',''],['ad','Ad',''],['course','Corso',''],['fmt','Formato',''],['spend','Spesa','num'],['lead','Lead','num'],['cpl','CPL','num'],['ctr','CTR','num']],st.sa,st.da,k=>{if(k==='#'||k==='th')return;st.da=st.sa===k?-st.da:(k==='cpl'?1:-1);st.sa=k;render()});
+ ta.tBodies[0].innerHTML=rows.slice(0,300).map((a,i)=>{const c=(D.creatives||{})[a.id]||{};
+  const img=c.th?`<img class="th" loading="lazy" src="${esc(c.th)}" alt="">`:'<span class="th"></span>';
+  return `<tr><td class="num">${i+1}</td><td>${c.pv?`<a href="${esc(c.pv)}" target="_blank" rel="noopener" title="Anteprima">${img}</a>`:img}</td><td class="nm"><b>${esc(a.ad)}</b><span>${esc(a.camp)}</span></td><td><span class="tag">${esc(a.course)}</span></td><td>${a.fmt}</td><td class="num">${eur(a.spend)}</td><td class="num">${n0(a.lead)}</td><td class="num">${eur(a.cpl)}</td><td class="num">${pc(a.ctr)}</td></tr>`}).join('');
+ na.textContent=rows.length>300?`Mostrate le prime 300 di ${rows.length}.`:`${rows.length} ads sopra la soglia di spesa.`;
+ const g={};ads.filter(a=>!st.f||a.fmt===st.f).forEach(a=>{const x=g[a.course]||={course:a.course,spend:0,lead:0,impr:0,link:0,n:0};x.spend+=a.spend;x.lead+=a.lead;x.impr+=a.impr;x.link+=a.link;x.n++});
+ const cr=sortBy(Object.values(g).map(enrich),st.sc,st.dc);
+ head(tc,[['course','Corso',''],['n','Ads','num'],['spend','Spesa','num'],['lead','Lead','num'],['cpl','CPL','num'],['ctr','CTR','num']],st.sc,st.dc,k=>{st.dc=st.sc===k?-st.dc:(k==='cpl'||k==='course'?1:-1);st.sc=k;render()});
+ tc.tBodies[0].innerHTML=cr.map(x=>`<tr><td><span class="tag">${esc(x.course)}</span></td><td class="num">${x.n}</td><td class="num">${eur(x.spend)}</td><td class="num">${n0(x.lead)}</td><td class="num">${eur(x.cpl)}</td><td class="num">${pc(x.ctr)}</td></tr>`).join('')}
+function fmtD(s){const[y,m,d]=s.split('-');return `${d}/${m}/${y}`}
+if(D)init();else fetch('data.json').then(r=>r.json()).then(j=>{D=j;init()});
+</script></body></html>
