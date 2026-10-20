@@ -60,8 +60,30 @@ jobs:
         working-directory: pipeline
         run: python tools/build_site.py
 
+      # Pagina /ads/. Se il token manca o Meta non risponde il radar esce lo stesso:
+      # questa pagina non deve poter bloccare la raccolta settimanale. I dati in
+      # chiaro si cancellano sempre, prima del commit.
+      - name: Top ads TAG
+        working-directory: pipeline
+        env:
+          TAG_META_TOKEN: ${{ secrets.TAG_META_TOKEN }}
+          TAG_ADS_PASSWORD: ${{ secrets.TAG_ADS_PASSWORD }}
+        run: |
+          if [ -z "${TAG_META_TOKEN:-}" ] || [ -z "${TAG_ADS_PASSWORD:-}" ]; then
+            echo "::warning::Mancano TAG_META_TOKEN o TAG_ADS_PASSWORD: /ads/ non aggiornata."
+            echo "Secret assenti: pagina /ads/ non aggiornata." >> "$GITHUB_STEP_SUMMARY"
+          elif python -m pip install --quiet cryptography && python tools/tag_ads.py && python tools/protect.py ads; then
+            echo "Pagina /ads/ cifrata e aggiornata." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::Aggiornamento Top Ads fallito. Il radar viene pubblicato comunque."
+            echo "Aggiornamento Top Ads fallito: pubblicata solo la raccolta del radar." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          rm -f "$RADAR_SITE/ads/data.json" "$RADAR_SITE/ads/data.js"
+          rm -f "$RADAR_SITE/ads/".index.*.tmp
+
       - name: Pubblica
         run: |
+          rm -f ads/data.json ads/data.js ads/.index.*.tmp
           git config user.name  "Radar NAM"
           git config user.email "abbonamenti@namstudio.it"
           git add -A
