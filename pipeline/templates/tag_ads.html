@@ -45,8 +45,28 @@ th.num,td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 th.s::after{content:" ↓"}th.s.asc::after{content:" ↑"}
 td.nm{max-width:420px}.nm b{display:block;font-weight:550;word-break:break-word}.nm span{color:var(--muted);font-size:12px}
 .th{width:56px;height:56px;border-radius:8px;object-fit:cover;background:var(--line);display:block}
+.th.play{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:18px}
+.th-btn{border:0;padding:0;background:transparent;cursor:zoom-in;border-radius:8px}
+.th-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .tag{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:12px}
 a{color:var(--accent)}
+body.lb-on{overflow:hidden}
+.lb{position:fixed;inset:0;z-index:40}
+.lb-back{position:absolute;inset:0;background:rgba(10,10,8,.86)}
+.lb-box{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.lb-stage{display:flex;align-items:center;justify-content:center;pointer-events:auto}
+.lb-stage img,.lb-stage video{max-width:min(1100px,calc(100vw - 120px));max-height:calc(100vh - 120px);border-radius:10px;background:#000;display:block}
+.lb-cap{color:#f0efe8;font-size:13px;margin-top:12px;max-width:min(1100px,92vw);text-align:center;pointer-events:none}
+.lb-wait{color:#f0efe8;margin:0;pointer-events:none}
+.lb-x,.lb-nav{position:absolute;border:0;border-radius:50%;background:rgba(255,255,255,.94);color:#15150f;cursor:pointer;display:flex;align-items:center;justify-content:center;pointer-events:auto}
+.lb-x{top:14px;right:14px;width:40px;height:40px;font-size:26px;line-height:1}
+.lb-nav{top:50%;transform:translateY(-50%);width:44px;height:44px;font-size:30px;line-height:1}
+.lb-nav.p{left:12px}.lb-nav.n{right:12px}
+.lb-x:focus-visible,.lb-nav:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media (max-width:800px){
+  .lb-stage img,.lb-stage video{max-width:calc(100vw - 16px);max-height:calc(100vh - 140px)}
+  .lb-nav.p{left:6px}.lb-nav.n{right:6px}
+}
 </style></head><body><nav class="side"><div class="br">Top Ads TAG</div><button type="button" data-s="radar">Radar mercato<small>Ads del mercato dalla Ad Library</small></button><button type="button" data-s="tag">Creatività TAG<small id="cn-tag"></small></button></nav>
 <div id="radar" class="rd" hidden><iframe id="rf" title="Radar mercato"></iframe></div><div class="wrap" id="tagsec">
 <h1>Creatività TAG</h1><div class="sub">Tutte le ads lanciate da TAG nell’account Meta act_1943610831146, comprese quelle consigliate da NAM.</div>
@@ -66,7 +86,21 @@ a{color:var(--accent)}
 <div class="sub" id="na"></div>
 <h2>Riepilogo per corso</h2>
 <div class="tw"><table id="tc"><thead></thead><tbody></tbody></table></div>
-<p class="sub">Lead = azione "lead" di Meta (moduli nativi e pixel). CPL = spesa / lead. CTR = clic sul link / impression. Corso dalle lettere 3-4 del codice ITxxYY; lead magnet, eventi e nomi fuori schema sono in "Non-corso".</p>
+<p class="sub">Lead = azione "lead" di Meta (moduli nativi e pixel). CPL = spesa / lead. CTR = clic sul link / impression. Corso dalle lettere 3-4 del codice ITxxYY; lead magnet, eventi e nomi fuori schema sono in "Non-corso". Clicca una miniatura per l’anteprima.</p>
+</div>
+<div id="lb" class="lb" hidden>
+ <div class="lb-back" data-chiudi></div>
+ <div class="lb-box" role="dialog" aria-modal="true" aria-labelledby="lb-cap">
+  <button type="button" class="lb-x" data-chiudi aria-label="Chiudi">×</button>
+  <button type="button" class="lb-nav p" id="lb-prev" aria-label="Precedente">‹</button>
+  <div class="lb-stage">
+   <p class="lb-wait" id="lb-wait" hidden>Apro l’anteprima…</p>
+   <img id="lb-img" alt="" hidden>
+   <video id="lb-vid" controls playsinline hidden></video>
+  </div>
+  <button type="button" class="lb-nav n" id="lb-next" aria-label="Successiva">›</button>
+  <div class="lb-cap" id="lb-cap"></div>
+ </div>
 </div>
 <script>window.TAG_DATA=__TAG_DATA_JSON__;</script>
 <script>
@@ -76,7 +110,9 @@ let D=window.TAG_DATA,st={s:(location.hash.slice(1) in SEC)?location.hash.slice(
 const eur=v=>v==null||!isFinite(v)?'–':v.toLocaleString('it-IT',{style:'currency',currency:'EUR',maximumFractionDigits:v<100?2:0});
 const n0=v=>v.toLocaleString('it-IT');const pc=v=>isFinite(v)?(v).toLocaleString('it-IT',{maximumFractionDigits:2})+'%':'–';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const https=u=>typeof u==='string'&&u.startsWith('https://');
+const FILE_MEDIA=/^m\/[a-f0-9]{64}\.bin$/;
+let vista=[],lbI=0,lbSeq=0,ritorno=null,mediaKey=null;
+const aperti=new Map();
 function enrich(a){a.cpl=a.lead?a.spend/a.lead:Infinity;a.ctr=a.impr?a.link/a.impr*100:0;return a}
 function init(){
  document.getElementById('win').innerHTML=Object.entries(W).map(([k,l])=>`<button type="button" class="chip" data-w="${k}">${l}</button>`).join(' ');
@@ -92,7 +128,15 @@ function init(){
 function sortBy(r,k,d){return r.sort((a,b)=>{let x=a[k],y=b[k];if(typeof x==='string')return d*x.localeCompare(y);return d*((x===Infinity?1e12:x)-(y===Infinity?1e12:y))})}
 function head(t,cols,k,d,cb){t.tHead.innerHTML='<tr>'+cols.map(c=>`<th class="${c[2]||''} ${c[0]===k?'s'+(d>0?' asc':''):''}" data-k="${c[0]}">${c[1]}</th>`).join('')+'</tr>';
  t.tHead.querySelectorAll('th[data-k]').forEach(th=>th.onclick=()=>cb(th.dataset.k))}
+const lb=document.getElementById('lb');
+const lbImg=document.getElementById('lb-img');
+const lbVid=document.getElementById('lb-vid');
+const lbCap=document.getElementById('lb-cap');
+const lbWait=document.getElementById('lb-wait');
+const lbPrev=document.getElementById('lb-prev');
+const lbNext=document.getElementById('lb-next');
 function render(){
+ if(typeof lb!=='undefined'&&lb&&!lb.hidden) chiudiLb();
  document.querySelectorAll('[data-w]').forEach(b=>b.classList.toggle('on',b.dataset.w===st.w));
  document.querySelectorAll('[data-s]').forEach(b=>b.classList.toggle('on',b.dataset.s===st.s));
  const w=D.windows[st.w],ads=w.ads.map(a=>enrich({...a}));
@@ -104,14 +148,159 @@ function render(){
  tiles.innerHTML=[[eur(S.sp),'Spesa'],[n0(S.l),'Lead'],[eur(S.l?S.sp/S.l:NaN),'CPL medio'],[pc(S.i?S.k/S.i*100:NaN),'CTR'],[n0(fil.length),'Ads con spesa']].map(t=>`<div class="tile"><div class="n">${t[0]}</div><div class="l">${t[1]}</div></div>`).join('');
  const rows=sortBy(fil.filter(a=>a.spend>=st.min),st.sa,st.da);
  head(ta,[['#','',''],['th','',''],['ad','Ad',''],['course','Corso',''],['fmt','Formato',''],['spend','Spesa','num'],['lead','Lead','num'],['cpl','CPL','num'],['ctr','CTR','num']],st.sa,st.da,k=>{if(k==='#'||k==='th')return;st.da=st.sa===k?-st.da:(k==='cpl'?1:-1);st.sa=k;render()});
- ta.tBodies[0].innerHTML=rows.slice(0,300).map((a,i)=>{const c=(D.creatives||{})[a.id]||{};
-  const img=https(c.th)?`<img class="th" loading="lazy" src="${esc(c.th)}" alt="">`:'<span class="th"></span>';
-  return `<tr><td class="num">${i+1}</td><td>${https(c.pv)?`<a href="${esc(c.pv)}" target="_blank" rel="noopener" title="Anteprima">${img}</a>`:img}</td><td class="nm"><b>${esc(a.ad)}</b><span>${esc(a.camp)}</span></td><td><span class="tag">${esc(a.course)}</span></td><td>${a.fmt}</td><td class="num">${eur(a.spend)}</td><td class="num">${n0(a.lead)}</td><td class="num">${eur(a.cpl)}</td><td class="num">${pc(a.ctr)}</td></tr>`}).join('');
+ vista=rows.slice(0,300);
+ ta.tBodies[0].innerHTML=vista.map((a,i)=>{const c=(D.creatives||{})[a.id]||{};
+  const src=srcThumb(c);
+  const apribile=src||quadriDi(a).length;
+  const img=src?`<img class="th" alt="" src="${src}">`:`<span class="th play" aria-hidden="true">▶</span>`;
+  const cella=apribile?`<button type="button" class="th-btn" data-i="${i}" aria-label="Apri anteprima di ${esc(a.ad)}">${img}</button>`:img;
+  return `<tr><td class="num">${i+1}</td><td>${cella}</td><td class="nm"><b>${esc(a.ad)}</b><span>${esc(a.camp)}</span></td><td><span class="tag">${esc(a.course)}</span></td><td>${a.fmt}</td><td class="num">${eur(a.spend)}</td><td class="num">${n0(a.lead)}</td><td class="num">${eur(a.cpl)}</td><td class="num">${pc(a.ctr)}</td></tr>`}).join('');
  na.textContent=rows.length>300?`Mostrate le prime 300 di ${rows.length}.`:`${rows.length} ads sopra la soglia di spesa.`;
  const g={};ads.filter(a=>!st.f||a.fmt===st.f).forEach(a=>{const x=g[a.course]||={course:a.course,spend:0,lead:0,impr:0,link:0,n:0};x.spend+=a.spend;x.lead+=a.lead;x.impr+=a.impr;x.link+=a.link;x.n++});
  const cr=sortBy(Object.values(g).map(enrich),st.sc,st.dc);
  head(tc,[['course','Corso',''],['n','Ads','num'],['spend','Spesa','num'],['lead','Lead','num'],['cpl','CPL','num'],['ctr','CTR','num']],st.sc,st.dc,k=>{st.dc=st.sc===k?-st.dc:(k==='cpl'||k==='course'?1:-1);st.sc=k;render()});
  tc.tBodies[0].innerHTML=cr.map(x=>`<tr><td><span class="tag">${esc(x.course)}</span></td><td class="num">${x.n}</td><td class="num">${eur(x.spend)}</td><td class="num">${n0(x.lead)}</td><td class="num">${eur(x.cpl)}</td><td class="num">${pc(x.ctr)}</td></tr>`).join('')}
 function fmtD(s){const[y,m,d]=s.split('-');return `${d}/${m}/${y}`}
+function srcThumb(c){
+ const t=c&&c.th&&D.media&&D.media.thumbs&&D.media.thumbs[c.th];
+ return typeof t==='string'&&t.startsWith('data:image/')?t:'';
+}
+function quadriDi(a){
+ const c=(D.creatives||{})[a.id]||{};
+ return (c.frames||[]).filter(f=>f&&(f.k==='image'||f.k==='video')&&FILE_MEDIA.test(f.f||''));
+}
+function quadri(){
+ const out=[];
+ vista.forEach(a=>{
+  const c=(D.creatives||{})[a.id]||{};
+  const frames=quadriDi(a);
+  if(frames.length) frames.forEach((f,fi)=>out.push({a,c,f,fi,n:frames.length}));
+  else if(srcThumb(c)) out.push({a,c,inline:srcThumb(c),fi:0,n:1});
+ });
+ return out;
+}
+async function chiaveMedia(){
+ if(mediaKey) return mediaKey;
+ const pw=(sessionStorage.getItem('tag-ads-pw')||'').trim().normalize('NFC');
+ if(!pw||!crypto.subtle) throw new Error('chiave');
+ const mat=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']);
+ const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode('tag-ads-media-v1'),iterations:600000,hash:'SHA-256'},mat,256);
+ const aes=await crypto.subtle.importKey('raw',bits,{name:'AES-GCM'},false,['decrypt']);
+ const mac=await crypto.subtle.importKey('raw',bits,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+ mediaKey={aes,mac};
+ return mediaKey;
+}
+function urlMedia(rel){
+ const dir=location.pathname.replace(/\/index\.html$/,'/').replace(/\/?$/,'/');
+ return dir+rel;
+}
+async function decifraFile(path,kind){
+ if(aperti.has(path)){const u=aperti.get(path);aperti.delete(path);aperti.set(path,u);return u}
+ const chiave=await chiaveMedia();
+ const res=await fetch(urlMedia(path));
+ if(!res.ok) throw new Error('file');
+ const ct=new Uint8Array(await res.arrayBuffer());
+ const hex=path.slice(2,-4);
+ const raw=new Uint8Array(hex.match(/../g).map(h=>parseInt(h,16)));
+ const iv=new Uint8Array(await crypto.subtle.sign('HMAC',chiave.mac,raw)).slice(0,12);
+ const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},chiave.aes,ct);
+ const blob=new Blob([plain],{type:kind==='video'?'video/mp4':'image/webp'});
+ const url=URL.createObjectURL(blob);
+ aperti.set(path,url);
+ while(aperti.size>8){
+  const k=aperti.keys().next().value;
+  if(k===path) break;
+  URL.revokeObjectURL(aperti.get(k));
+  aperti.delete(k);
+ }
+ return url;
+}
+function fermaVideo(){lbVid.pause();lbVid.removeAttribute('src');lbVid.load()}
+function chiudiLb(){
+ if(lb.hidden) return;
+ lbSeq++;
+ lb.hidden=true;
+ document.body.classList.remove('lb-on');
+ fermaVideo();
+ lbImg.removeAttribute('src');
+ if(ritorno&&ritorno.focus) ritorno.focus();
+}
+async function mostraQuadro(i){
+ const q=quadri();
+ if(!q.length) return chiudiLb();
+ const mio=++lbSeq;
+ i=(i+q.length)%q.length;
+ lbI=i;
+ const item=q[i];
+ lbCap.textContent=item.n>1?`${item.a.ad} · ${item.fi+1} di ${item.n}`:item.a.ad;
+ lbPrev.hidden=lbNext.hidden=q.length<2;
+ lbWait.hidden=false;
+ lbWait.textContent='Apro l’anteprima…';
+ lbImg.hidden=true;
+ fermaVideo();
+ lbVid.hidden=true;
+ try{
+  if(item.inline){
+   if(mio!==lbSeq) return;
+   lbImg.src=item.inline;
+   lbImg.alt=item.a.ad;
+   lbImg.hidden=false;
+   lbWait.hidden=true;
+   return;
+  }
+  const url=await decifraFile(item.f.f,item.f.k);
+  if(mio!==lbSeq) return;
+  lbWait.hidden=true;
+  if(item.f.k==='video'){
+   lbVid.poster=srcThumb(item.c)||'';
+   lbVid.src=url;
+   lbVid.hidden=false;
+   lbVid.play().catch(()=>{});
+  }else{
+   lbImg.src=url;
+   lbImg.alt=item.a.ad;
+   lbImg.hidden=false;
+  }
+ }catch(e){
+  if(mio!==lbSeq) return;
+  lbWait.hidden=false;
+  lbWait.textContent='Anteprima non disponibile.';
+ }
+}
+function apriLb(i){
+ const q=quadri();
+ const partenza=q.findIndex(x=>x.a===vista[i]);
+ if(partenza<0) return;
+ ritorno=document.activeElement;
+ lb.hidden=false;
+ document.body.classList.add('lb-on');
+ lb.querySelector('.lb-x').focus();
+ mostraQuadro(partenza);
+}
+function stepLb(d){if(!lb.hidden) mostraQuadro(lbI+d)}
+ta.addEventListener('click',ev=>{
+ const btn=ev.target.closest('[data-i]');
+ if(btn) apriLb(+btn.dataset.i);
+});
+lb.addEventListener('click',ev=>{
+ if(ev.target.closest('img,video,.lb-nav')) return;
+ chiudiLb();
+});
+lbPrev.addEventListener('click',()=>stepLb(-1));
+lbNext.addEventListener('click',()=>stepLb(1));
+document.addEventListener('keydown',ev=>{
+ if(lb.hidden) return;
+ if(ev.key==='Escape'){ev.preventDefault();chiudiLb()}
+ else if(ev.key==='ArrowRight'){ev.preventDefault();stepLb(1)}
+ else if(ev.key==='ArrowLeft'){ev.preventDefault();stepLb(-1)}
+});
+let touchX=null;
+lb.addEventListener('touchstart',ev=>{touchX=ev.changedTouches[0].clientX},{passive:true});
+lb.addEventListener('touchend',ev=>{
+ if(touchX==null) return;
+ const dx=ev.changedTouches[0].clientX-touchX;
+ if(Math.abs(dx)>48) stepLb(dx<0?1:-1);
+ touchX=null;
+},{passive:true});
 if(D)init();
 </script></body></html>

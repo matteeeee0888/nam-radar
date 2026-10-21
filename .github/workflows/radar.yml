@@ -66,7 +66,7 @@ jobs:
       # lo stesso. Nel repo resta solo ads/index.html cifrato.
       - name: Top ads TAG
         working-directory: pipeline
-        timeout-minutes: 45
+        timeout-minutes: 150
         continue-on-error: true
         run: |
           if [ -z "$TAG_META_TOKEN" ] || [ -z "$TAG_ADS_PASSWORD" ]; then
@@ -74,25 +74,27 @@ jobs:
             echo "mancano i secret delle ads" >&2
             exit 1
           fi
-          python -m pip install --quiet 'cryptography>=42'
+          python -m pip install --quiet 'cryptography>=42' pillow
           python tools/tag_ads.py && python tools/protect.py ads
 
       - name: Pubblica
         run: |
           git config user.name  "Radar NAM"
           git config user.email "abbonamenti@namstudio.it"
+          rm -rf ads/.media
           rm -f ads/data.json ads/data.js ads/.data.json.partial ads/.index.html.tmp
-          if [ -f ads/index.html ] && grep -q 'window.TAG_DATA' ads/index.html; then
+          find ads -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.webp' -o -name '*.gif' -o -name '*.mp4' -o -name '*.mov' -o -name '*.webm' \) -delete
+          if [ -f ads/index.html ] && grep -q -e 'window.TAG_DATA' -e 'data:image/' ads/index.html; then
             echo "ads/index.html è in chiaro, lo tolgo e non lo pubblico" >&2
             git checkout -- ads/index.html 2>/dev/null || rm -f ads/index.html
-            if [ -f ads/index.html ] && grep -q 'window.TAG_DATA' ads/index.html; then
+            if [ -f ads/index.html ] && grep -q -e 'window.TAG_DATA' -e 'data:image/' ads/index.html; then
               echo "non sono riuscito a togliere la pagina in chiaro" >&2
               exit 1
             fi
             echo "- Top ads non pubblicate: la pagina era in chiaro" >> "$GITHUB_STEP_SUMMARY"
           fi
           git add -A
-          if git diff --staged --name-only | grep -Eq '^(ads/data\.json|ads/data\.js|ads/\.data\.json\.partial|ads/\.index\.html\.tmp)$'; then
+          if git diff --staged --name-only | grep -E '^ads/' | grep -Eq '(^|/)(data\.json|data\.js|\.data\.json\.partial|\.index\.html\.tmp)$|\.media/|\.(png|jpe?g|webp|gif|mp4|mov|webm)$'; then
             echo "rifiuto il commit: dati ads in chiaro" >&2
             exit 1
           fi
