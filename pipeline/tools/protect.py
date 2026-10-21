@@ -4,14 +4,19 @@ protect.py — cifra la pagina Top Ads e cancella i dati in chiaro.
 
     TAG_ADS_PASSWORD=... RADAR_SITE=... python tools/protect.py ads
 
-Legge $RADAR_SITE/ads/data.json e pipeline/templates/tag_ads.html, mette i
-dati dentro la pagina e scrive $RADAR_SITE/ads/index.html. La pagina pubblica
+Legge $RADAR_SITE/ads/data.json e i file in ads/.media/, mette i dati nella
+pagina e cifra ogni immagine o video in ads/m/<sha256>.bin. La pagina pubblica
 chiede la password e decifra nel browser (PBKDF2-SHA256, 600k iterazioni,
-AES-256-GCM). Il json non resta sul disco.
+AES-256-GCM). La stessa password apre i media, con un sale diverso. Il json
+e i file originali non restano sul disco.
 """
 import base64
+import hashlib
+import hmac
 import json
 import os
+import re
+import shutil
 import sys
 import unicodedata
 
@@ -152,11 +157,121 @@ def cifra(html, pw):
     return salt, iv, ct
 
 
+def chiave_media(pw):
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
+    kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32,
+                     salt=b"tag-ads-media-v1", iterations=ITERAZIONI)
+    return kdf.derive(pw.encode("utf-8"))
+
+
+def cifra_blob(data, key):
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+    digest = hashlib.sha256(data).digest()
+    iv = hmac.new(key, digest, hashlib.sha256).digest()[:12]
+    ct = AESGCM(key).encrypt(iv, data, None)
+    if AESGCM(key).decrypt(iv, ct, None) != data:
+        sys.exit("verifica media fallita")
+    return digest.hex() + ".bin", ct
+
+
+def incorpora_media(dati, cartella, key, creati):
+    """Sostituisce i file in .media/ con ciphertext in m/. I creati sono i bin nuovi."""
+    base = os.path.realpath(os.path.join(cartella, ".media"))
+    out_dir = os.path.join(cartella, "m")
+    os.makedirs(out_dir, exist_ok=True)
+    usati = set()
+    creatives = dati.get("creatives") or {}
+    if not isinstance(creatives, dict):
+        sys.exit("creatives non è un oggetto")
+    for ad_id, voce in list(creatives.items()):
+        if not isinstance(voce, dict):
+            creatives.pop(ad_id, None)
+            continue
+        th = voce.get("th")
+        if th is not None and not re.fullmatch(r"[a-f0-9]{16}", th or ""):
+            sys.exit("miniatura non locale")
+        frames_out = []
+        for fr in (voce.get("frames") or [])[:12]:
+            if not isinstance(fr, dict) or fr.get("kind") not in ("image", "video"):
+                continue
+            rel = fr.get("file") or ""
+            if not rel.startswith(".media/") or ".." in rel.split("/"):
+                sys.exit("media fuori cartella")
+            pieno = os.path.realpath(os.path.join(cartella, rel))
+            if not pieno.startswith(base + os.sep) or not os.path.isfile(pieno):
+                continue
+            with open(pieno, "rb") as f:
+                blob = f.read()
+            if not blob or len(blob) > 20_000_000:
+                continue
+            nome, ct = cifra_blob(blob, key)
+            dest = os.path.join(out_dir, nome)
+            if not os.path.exists(dest):
+                tmp = dest + ".parziale"
+                with open(tmp, "wb") as f:
+                    f.write(ct)
+                os.replace(tmp, dest)
+                creati.append(dest)
+            usati.add(nome)
+            frames_out.append({"k": "video" if fr["kind"] == "video" else "image", "f": "m/" + nome})
+        nuova = {}
+        if th:
+            nuova["th"] = th
+        if frames_out:
+            nuova["frames"] = frames_out
+        if nuova:
+            creatives[ad_id] = nuova
+        else:
+            creatives.pop(ad_id, None)
+    thumbs = (dati.get("media") or {}).get("thumbs") or {}
+    puliti = {}
+    if not isinstance(thumbs, dict):
+        sys.exit("miniature non valide")
+    for chiave, valore in thumbs.items():
+        if not re.fullmatch(r"[a-f0-9]{16}", chiave):
+            sys.exit("chiave miniatura non valida")
+        if not isinstance(valore, str) or not valore.startswith("data:image/webp;base64,"):
+            sys.exit("miniatura non è un'immagine locale")
+        puliti[chiave] = valore
+    for voce in creatives.values():
+        if voce.get("th") and voce["th"] not in puliti:
+            voce.pop("th", None)
+    for ad_id, voce in list(creatives.items()):
+        if not voce.get("th") and not voce.get("frames"):
+            creatives.pop(ad_id, None)
+        for fr in voce.get("frames") or []:
+            if not re.fullmatch(r"m/[a-f0-9]{64}\.bin", fr["f"]):
+                sys.exit("frame non cifrato")
+    dati["creatives"] = creatives
+    dati["media"] = {"thumbs": puliti}
+    return usati
+
+
+def elimina_orfani(cartella, usati):
+    out_dir = os.path.join(cartella, "m")
+    if not os.path.isdir(out_dir):
+        return
+    for nome in os.listdir(out_dir):
+        if re.fullmatch(r"[a-f0-9]{64}\.bin", nome) and nome not in usati:
+            os.remove(os.path.join(out_dir, nome))
+
+
 def cancella_chiaro(cartella):
     for nome in ("data.json", "data.js", ".data.json.partial", ".index.html.tmp"):
         path = os.path.join(cartella, nome)
         if os.path.isfile(path):
             os.remove(path)
+    media = os.path.join(cartella, ".media")
+    if os.path.isdir(media):
+        shutil.rmtree(media)
+    out_dir = os.path.join(cartella, "m")
+    if os.path.isdir(out_dir):
+        for nome in os.listdir(out_dir):
+            if nome.endswith(".parziale"):
+                os.remove(os.path.join(out_dir, nome))
 
 
 def main():
@@ -164,6 +279,8 @@ def main():
         sys.exit("uso: python tools/protect.py ads")
     template_path, cartella = percorsi()
     dati_path = os.path.join(cartella, "data.json")
+    creati = []
+    scritto = False
     try:
         pw = password()
         if not os.path.isfile(dati_path):
@@ -172,12 +289,13 @@ def main():
             sys.exit("manca il template tag_ads.html")
         with open(dati_path, encoding="utf-8") as f:
             raw = f.read()
-        if len(raw.encode("utf-8")) > 20_000_000:
+        if len(raw.encode("utf-8")) > 40_000_000:
             sys.exit("data.json è troppo grande")
         dati = json.loads(raw)
         finestre = dati.get("windows") or {}
         if any(k not in finestre for k in ("30", "90", "180")):
             sys.exit("data.json senza le finestre 30, 90 e 180")
+        usati = incorpora_media(dati, cartella, chiave_media(pw), creati)
         with open(template_path, encoding="utf-8") as f:
             template = f.read()
         pezzi = template.split("__TAG_DATA_JSON__")
@@ -204,8 +322,14 @@ def main():
         with open(tmp, "w", encoding="utf-8") as f:
             f.write(pagina)
         os.replace(tmp, os.path.join(cartella, "index.html"))
+        scritto = True
+        elimina_orfani(cartella, usati)
     finally:
         cancella_chiaro(cartella)
+        if not scritto:
+            for path in creati:
+                if os.path.isfile(path):
+                    os.remove(path)
     sommario = os.environ.get("GITHUB_STEP_SUMMARY")
     if sommario:
         with open(sommario, "a", encoding="utf-8") as f:
